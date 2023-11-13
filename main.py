@@ -6,10 +6,7 @@ import sys
 import numpy as np
 from resources.objReader import *
 from resources.rayOps import *
-
-
-# do some other stuff in the main process
-
+from resources.renderFuncs import *
 
 #read obj file/files
 filename = sys.argv[1]
@@ -28,7 +25,7 @@ center_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
 
 # Setup camera and viewPlane
-camPos = np.array([0,0,5])
+camPos = np.array([0,0,4])
 camDir = np.array([0,0,-1])
 viewX = np.array([1,0,0])
 viewY = np.array([0,1,0])
@@ -49,95 +46,6 @@ lightPos = np.array([3,3,-5])
 
 
 clock = pygame.time.Clock()
-
-def polySort(e, camPos, vertices):
-        p = []
-        for v in e:
-            p.append(vertices[v-1])
-        p = np.array(p)
-        avg = 0
-        for v in p:
-            avg += np.dot(v - camPos, v-camPos)
-        avg /= len(p)
-        return -avg
-
-def rotateCamX(camPos, camDir, lightPos, viewPlane, viewX, viewY, angle):
-    
-    angle = np.pi * (angle/180)
-    rotMat = np.array([
-    [1, 0, 0],
-    [0,math.cos(angle),-math.sin(angle)],
-    [0, math.sin(angle), math.cos(angle)]
-    ])
-
-    camPos = np.matmul(rotMat, camPos)
-    camDir = np.matmul(rotMat, camDir)
-    viewX = np.matmul(rotMat, viewX)
-    viewY = np.matmul(rotMat, viewY)
-    lightPos = np.matmul(rotMat, lightPos)
-    viewPlane = camPos + focalLength*camDir
-    return camPos, camDir, lightPos, viewPlane, viewX, viewY
-
-def rotateCamY(camPos, camDir, lightPos, viewPlane, viewX, viewY, angle):
-    
-    angle = np.pi * (angle/180)
-    rotMat = np.array([
-    [math.cos(angle),0,math.sin(angle)],
-    [0, 1, 0],
-    [-math.sin(angle), 0, math.cos(angle)]
-    ])
-
-    camPos = np.matmul(rotMat, camPos)
-    camDir = np.matmul(rotMat, camDir)
-    viewX = np.matmul(rotMat, viewX)
-    viewY = np.matmul(rotMat, viewY)
-    lightPos = np.matmul(rotMat, lightPos)
-    viewPlane = camPos + focalLength*camDir
-    return camPos, camDir, lightPos, viewPlane, viewX, viewY
-
-
-def handleEvents(camPos, camDir, lightPos, viewPlane, viewX, viewY, shading, points, wireframe):
-    dt = clock.tick(60) / 1000
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_w]:
-        camPos, camDir, lightPos, viewPlane, viewX, viewY = rotateCamX(camPos, camDir, lightPos, viewPlane, viewX, viewY, 100*dt)
-
-    if keys[pygame.K_s]:
-        camPos, camDir, lightPos, viewPlane, viewX, viewY = rotateCamX(camPos, camDir, lightPos, viewPlane, viewX, viewY, -100*dt)
-
-    if keys[pygame.K_a]:
-        camPos, camDir, lightPos, viewPlane, viewX, viewY = rotateCamY(camPos, camDir, lightPos, viewPlane, viewX, viewY, 100*dt)
-
-    if keys[pygame.K_d]:
-        camPos, camDir, lightPos, viewPlane, viewX, viewY = rotateCamY(camPos, camDir, lightPos, viewPlane, viewX, viewY, -100*dt)
-
-    for ev in pygame.event.get():
-        if ev.type == pygame.KEYDOWN:
-            if ev.key == pygame.K_p:
-                if points:
-                    points = False
-                else:
-                    points = True
-    
-            if ev.key == pygame.K_l:
-                if shading:
-                    shading = False
-                else:
-                    shading = True
-
-            if ev.key == pygame.K_o:
-                if wireframe:
-                    wireframe = False
-                else:
-                    wireframe = True
-
-            if ev.key == pygame.K_ESCAPE:
-                pygame.quit()
-                exit()
-
-    return camPos, camDir, lightPos, viewPlane, viewX, viewY, shading, points, wireframe
-
 
 rotation = 0
 shading = True
@@ -164,7 +72,7 @@ while running:
     clock.tick()
 
     text_surface1 = my_font.render("FPS: " + str(int(clock.get_fps())), False, 'white')
-    text_surface3 = my_font.render("rotation : WASD ", False, 'white')
+    text_surface3 = my_font.render("movement : WASD RF ", False, 'white')
     text_surface4 = my_font.render("show/hide faces : L ", False, 'white')
     text_surface5 = my_font.render("wireframe on/off : O ", False, 'white')
     text_surface6 = my_font.render("highlight vertices : P ", False, 'white')
@@ -251,7 +159,7 @@ while running:
                 for v in scaleP:
                     pygame.draw.circle(screen, "red", v, 3)
               
-    camPos, camDir, lightPos, viewPlane, viewX, viewY, shading, points, wireframe = handleEvents(camPos, camDir, lightPos, viewPlane, viewX, viewY, shading, points, wireframe)
+    camPos, camDir, lightPos, viewPlane, viewX, viewY, shading, points, wireframe = handleEvents(clock, camPos, camDir, focalLength, lightPos, viewPlane, viewX, viewY, shading, points, wireframe)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
